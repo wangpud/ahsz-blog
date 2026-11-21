@@ -1,0 +1,16 @@
+# SQLite 运行时临时文件（数据库本体 data/blog.db 会提交，作为初始示例内容）
+data/*.db-wal
+data/*.db-shm
+data/*.db-journal
+
+# 操作系统 / 编辑器
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# 本地备份 / 临时文件
+*.bak
+*.tmp
