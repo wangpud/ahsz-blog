@@ -1,4 +1,8 @@
-# SQLite 运行时临时文件（数据库本体 data/blog.db 会提交，作为初始示例内容）
+# 安装生成：数据库连接配置（含账号密码）与安装锁，禁止提交
+data/db.config.php
+data/install.lock
+
+# SQLite 示例数据源（仅用于安装时可选导入，保留在仓库）
 data/*.db-wal
 data/*.db-shm
 data/*.db-journal
@@ -11,6 +15,12 @@ Thumbs.db
 .idea/
 .vscode/
 
+# 用户上传的附件（目录本身保留，上传文件不入库）
+uploads/*
+!uploads/.gitkeep
+
 # 本地备份 / 临时文件
+data/backups/*.sql
+data/cache/*.html
 *.bak
 *.tmp

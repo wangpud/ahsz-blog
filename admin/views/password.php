@@ -1,3 +1,4 @@
+<?php if (!defined('APP_NAME')) { http_response_code(403); exit; } ?>
 <form method="post" action="index.php?m=password-save">
   <div class="form-card">
     <div class="form-row">

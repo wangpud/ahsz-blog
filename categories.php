@@ -5,9 +5,20 @@
  * · 带分类：/categories.php?id=1 或 /categories/1 → 该分类的文章列表
  */
 require_once __DIR__ . '/inc/config.php';
+if (!db_is_installed()) { require __DIR__ . '/inc/need-install.php'; exit; }
 db_init();
-$db = db();
+require_once __DIR__ . '/inc/cache.php';
 
+header('Cache-Control: public, max-age=60');
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && ($cachedHtml = page_cache_get()) !== null) {
+    header('X-Page-Cache: HIT');
+    echo $cachedHtml;
+    exit;
+}
+header('X-Page-Cache: MISS');
+ob_start();
+
+$db = db();
 $active = 'cate';
 
 // 解析分类 ID：优先 GET 参数，其次路径 /categories/{id}
@@ -43,6 +54,7 @@ if ($cat) {
     $total = (int)$db->query("SELECT COUNT(*) FROM posts WHERE status=1 AND category_id={$cid}")->fetchColumn();
     [$pager, $offset] = paginate($total, $page, $perPage, '/categories/' . $cid);
     $posts = $db->query("SELECT * FROM posts WHERE status=1 AND category_id={$cid} ORDER BY created_at DESC LIMIT {$offset},{$perPage}")->fetchAll();
+    preload_post_meta($posts);
 } else {
     $pageTitle = '文章分类';
     $cats = get_categories();
@@ -98,4 +110,8 @@ if ($cat) {
   <?php endif; ?>
   </main>
 </div>
-<?php include __DIR__ . '/views/footer.php'; ?>
+<?php
+include __DIR__ . '/views/footer.php';
+$html = ob_get_clean();
+page_cache_set($html);
+echo $html;

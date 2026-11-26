@@ -1,4 +1,5 @@
 <?php
+if (!defined('APP_NAME')) { http_response_code(403); exit; }
 /** 前台侧栏：站点名片 + 分类 + 标签云 */
 $siteName = opt('site_name', APP_NAME);
 $siteSubtitle = opt('site_subtitle', '记录生活，留住点滴');

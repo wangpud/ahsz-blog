@@ -1,4 +1,6 @@
-<?php $isEdit = (bool)$cat; ?>
+<?php
+if (!defined('APP_NAME')) { http_response_code(403); exit; }
+$isEdit = (bool)$cat; ?>
 <form method="post" action="index.php?m=cate-save">
   <input type="hidden" name="id" value="<?= $isEdit ? (int)$cat['id'] : 0 ?>">
   <div class="form-card">

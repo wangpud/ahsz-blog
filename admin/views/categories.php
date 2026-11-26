@@ -1,3 +1,4 @@
+<?php if (!defined('APP_NAME')) { http_response_code(403); exit; } ?>
 <div class="panel-card">
   <div class="panel-head">
     <h2>分类管理（共 <?= count($cats) ?> 个）</h2>

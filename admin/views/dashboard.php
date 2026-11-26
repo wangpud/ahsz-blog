@@ -1,3 +1,4 @@
+<?php if (!defined('APP_NAME')) { http_response_code(403); exit; } ?>
 <div class="stats-grid">
   <div class="stat"><div class="ic" style="background:oklch(.6 .18 var(--hue))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8"/></svg></div><div><div class="num"><?= $stats['posts'] ?></div><div class="lbl">文章总数</div></div></div>
   <div class="stat"><div class="ic" style="background:oklch(.62 .16 calc(var(--hue) + 40))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div><div><div class="num"><?= $stats['categories'] ?></div><div class="lbl">分类数</div></div></div>

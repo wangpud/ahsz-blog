@@ -31,35 +31,71 @@ function tag_link(int $id): string {
     return link_to('tag/' . $id);
 }
 
-/** 获取全部分类（带文章数） */
+/** 获取全部分类（带文章数），请求内缓存避免重复查询 */
 function get_categories(): array {
-    return db()->query("
+    static $cache = null;
+    if ($cache !== null) return $cache;
+    return $cache = db()->query("
         SELECT c.*, (SELECT COUNT(*) FROM posts p WHERE p.category_id=c.id AND p.status=1) AS post_count
         FROM categories c ORDER BY c.sort_order ASC, c.id ASC
     ")->fetchAll();
 }
 
-/** 单个分类 */
+/** 单个分类，请求内缓存 */
 function get_category(int $id): ?array {
+    static $cache = [];
+    if (array_key_exists($id, $cache)) return $cache[$id];
     $st = db()->prepare("SELECT * FROM categories WHERE id=?");
     $st->execute([$id]);
-    $r = $st->fetch();
-    return $r ?: null;
+    return $cache[$id] = ($st->fetch() ?: null);
 }
 
-/** 全部分签（带文章数） */
+/** 全部分签（带文章数），请求内缓存 */
 function get_tags(): array {
-    return db()->query("
+    static $cache = null;
+    if ($cache !== null) return $cache;
+    return $cache = db()->query("
         SELECT t.*, (SELECT COUNT(*) FROM post_tags pt JOIN posts p ON p.id=pt.post_id WHERE pt.tag_id=t.id AND p.status=1) AS post_count
         FROM tags t ORDER BY post_count DESC, t.id ASC
     ")->fetchAll();
 }
 
-/** 文章的标签 */
+/** 文章的标签，请求内缓存 */
 function post_tags(int $postId): array {
+    static $cache = [];
+    if (isset($cache[$postId])) return $cache[$postId];
     $st = db()->prepare("SELECT t.* FROM tags t JOIN post_tags pt ON pt.tag_id=t.id WHERE pt.post_id=? ORDER BY t.id");
     $st->execute([$postId]);
-    return $st->fetchAll();
+    return $cache[$postId] = $st->fetchAll();
+}
+
+/**
+ * 批量预加载文章的分类与标签，消除列表页的 N+1 查询。
+ * 调用后 views/post-card.php 会直接从这里取数据，不再逐篇查库。
+ */
+function preload_post_meta(array $posts): void {
+    $GLOBALS['category_map'] = [];
+    $GLOBALS['post_tags_map'] = [];
+    if (!$posts) return;
+    $db = db();
+
+    $cids = array_values(array_unique(array_map('intval', array_column($posts, 'category_id'))));
+    if ($cids) {
+        $in = implode(',', array_fill(0, count($cids), '?'));
+        $st = $db->prepare("SELECT * FROM categories WHERE id IN ($in)");
+        $st->execute($cids);
+        foreach ($st->fetchAll() as $c) $GLOBALS['category_map'][(int)$c['id']] = $c;
+    }
+    // 未分类 sentinel，避免 post-card 对 category_id=0 再次查库
+    $GLOBALS['category_map'][0] = false;
+
+    $ids = array_values(array_map('intval', array_column($posts, 'id')));
+    if ($ids) {
+        $in = implode(',', array_fill(0, count($ids), '?'));
+        $st = $db->prepare("SELECT pt.post_id, t.* FROM post_tags pt JOIN tags t ON t.id=pt.tag_id WHERE pt.post_id IN ($in) ORDER BY t.id");
+        $st->execute($ids);
+        foreach ($st->fetchAll() as $t) $GLOBALS['post_tags_map'][(int)$t['post_id']][] = $t;
+    }
 }
 
 /** 设置文章的标签（传标签名数组） */
@@ -79,7 +115,7 @@ function set_post_tags(int $postId, array $tagNames): void {
             $st2->execute([$name, strtolower($name), time()]);
             $tid = $db->lastInsertId();
         }
-        $db->prepare("INSERT OR IGNORE INTO post_tags(post_id,tag_id) VALUES(?,?)")->execute([$postId, $tid]);
+        $db->prepare("INSERT IGNORE INTO `post_tags`(`post_id`,`tag_id`) VALUES(?,?)")->execute([$postId, $tid]);
     }
     // 清理无文章的空标签
     $db->exec("DELETE FROM tags WHERE id NOT IN (SELECT tag_id FROM post_tags)");
@@ -139,13 +175,39 @@ function make_alias(string $s): string {
     return trim($s, '-');
 }
 
-/** 站点统计 */
+/**
+ * 取文章列表封面图 URL：优先使用 cover 字段，否则从正文提取第一张 img 的 src。
+ * 仅接受 http(s) 或站内相对路径，避免 data/javascript 等危险协议。
+ */
+function post_cover_image(array $post): string {
+    $url = trim((string)($post['cover'] ?? ''));
+    if ($url === '') {
+        $content = (string)($post['content'] ?? '');
+        if (preg_match('/<img\b[^>]*\bsrc\s*=\s*["\']([^"\']+)["\']/i', $content, $m)) {
+            $url = trim(html_entity_decode($m[1], ENT_QUOTES, 'UTF-8'));
+        }
+    }
+    if ($url === '') return '';
+    // 协议白名单：允许站内绝对路径 / 相对路径 / http(s)
+    if (preg_match('#^(https?://|/|\./|\.\./)#i', $url)) return $url;
+    return '';
+}
+
+/** 站点统计：单条 SQL 完成，请求内缓存（头部与侧栏共用） */
 function site_stats(): array {
-    $db = db();
-    return [
-        'posts' => (int)$db->query("SELECT COUNT(*) FROM posts WHERE status=1")->fetchColumn(),
-        'categories' => (int)$db->query("SELECT COUNT(*) FROM categories")->fetchColumn(),
-        'tags' => (int)$db->query("SELECT COUNT(*) FROM tags")->fetchColumn(),
-        'views' => (int)$db->query("SELECT COALESCE(SUM(views),0) FROM posts")->fetchColumn(),
+    static $cache = null;
+    if ($cache !== null) return $cache;
+    $row = db()->query("
+        SELECT
+          (SELECT COUNT(*) FROM posts WHERE status=1) AS posts,
+          (SELECT COUNT(*) FROM categories) AS categories,
+          (SELECT COUNT(*) FROM tags) AS tags,
+          (SELECT COALESCE(SUM(views),0) FROM posts) AS views
+    ")->fetch();
+    return $cache = [
+        'posts' => (int)($row['posts'] ?? 0),
+        'categories' => (int)($row['categories'] ?? 0),
+        'tags' => (int)($row['tags'] ?? 0),
+        'views' => (int)($row['views'] ?? 0),
     ];
 }

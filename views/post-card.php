@@ -1,13 +1,25 @@
 <?php
+if (!defined('APP_NAME')) { http_response_code(403); exit; }
 /** 文章卡片组件，需传入 $post 数组 */
-$cat = get_category((int)$post['category_id']);
-$tags = post_tags((int)$post['id']);
+/** 优先用列表页批量预加载的数据，未预加载时才逐篇查库 */
+$cid = (int)($post['category_id'] ?? 0);
+$cat = array_key_exists($cid, $GLOBALS['category_map'] ?? [])
+    ? ($GLOBALS['category_map'][$cid] ?: null)
+    : get_category($cid);
+$pid = (int)($post['id'] ?? 0);
+$tags = $GLOBALS['post_tags_map'][$pid] ?? null;
+if ($tags === null) $tags = post_tags($pid);
+$cover = post_cover_image($post);
 ?>
 <article class="card post-card animate-in">
   <div class="post-cover">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
-      <path d="M4 5h16v14H4z"/><circle cx="9" cy="10" r="2"/><path d="m4 17 5-4 4 3 3-2 4 4"/>
-    </svg>
+    <?php if ($cover !== ''): ?>
+      <img class="cover-img" src="<?= e($cover) ?>" alt="<?= e($post['title'] ?? '') ?>" loading="lazy">
+    <?php else: ?>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+        <path d="M4 5h16v14H4z"/><circle cx="9" cy="10" r="2"/><path d="m4 17 5-4 4 3 3-2 4 4"/>
+      </svg>
+    <?php endif; ?>
     <span class="cover-text"><?= e($cat['name'] ?? '随笔') ?></span>
   </div>
   <div class="post-body">

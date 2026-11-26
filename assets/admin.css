@@ -74,6 +74,33 @@ th,td{text-align:left;padding:.8rem 1.1rem;border-bottom:1px solid var(--border)
 th{color:var(--muted);font-weight:700;font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;background:var(--bg)}
 tbody tr:hover{background:var(--bg)}
 tbody tr:last-child td{border-bottom:none}
+.chk-col{width:2.8rem;padding-right:0;padding-left:1.1rem}
+.chk-col input[type=checkbox]{width:1rem;height:1rem;accent-color:var(--primary);cursor:pointer;vertical-align:middle}
+#bulkBtn:disabled{opacity:.45;cursor:not-allowed}
+/* 文章列表分页 */
+.admin-pager{padding:1rem 1.3rem;border-top:1px solid var(--border)}
+.admin-pager .pagination{display:flex;gap:.4rem;justify-content:center;align-items:center;flex-wrap:wrap}
+.admin-pager .page-btn{padding:.4rem .75rem;border:1px solid var(--border);border-radius:.5rem;color:var(--text2);font-size:.82rem;background:var(--card);text-decoration:none;transition:background .15s,color .15s}
+.admin-pager .page-btn:hover{color:var(--primary);border-color:var(--primary)}
+.admin-pager .page-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.admin-pager .page-btn.disabled{opacity:.4;pointer-events:none}
+.admin-pager .page-dots{color:var(--muted);padding:0 .2rem}
+/* 文章列表：按分类管理标签条 */
+.cate-tabs{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;padding:.9rem 1.3rem;border-bottom:1px solid var(--border)}
+.cate-tab{padding:.4rem .8rem;border-radius:2rem;font-size:.82rem;font-weight:600;color:var(--text2);background:var(--input);text-decoration:none;transition:background .15s,color .15s;white-space:nowrap}
+.cate-tab:hover{background:var(--primary-soft);color:var(--primary)}
+.cate-tab.on{background:var(--primary);color:#fff}
+.cate-tab em{font-style:normal;opacity:.75;margin-left:.2rem;font-size:.76rem}
+.cate-tab.manage{margin-left:auto;background:transparent;color:var(--primary);border:1px solid var(--border)}
+.cate-tab.manage:hover{background:var(--primary-soft)}
+.cate-tab.top-tab{margin-left:.5rem;color:var(--primary);border:1px solid var(--primary-soft);background:var(--primary-soft)}
+.cate-tab.top-tab.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+/* 置顶 / 取消置顶 按钮 */
+.top-btn{display:inline-flex;align-items:center;margin-left:.35rem;padding:.2rem .55rem;border-radius:.45rem;font-size:.72rem;font-weight:700;text-decoration:none;border:1px solid var(--border);color:var(--text2);background:var(--input);transition:background .15s,color .15s}
+.top-btn:hover{color:var(--primary);border-color:var(--primary)}
+.top-btn.on{color:var(--primary);border-color:var(--primary);background:var(--primary-soft)}
+.has-img{display:inline-flex;align-items:center;justify-content:center;width:1.05rem;height:1.05rem;margin-left:.4rem;vertical-align:middle;color:var(--primary);cursor:help}
+.has-img svg{width:100%;height:100%}
 td .title{font-weight:700;color:var(--text)}
 td .meta{color:var(--muted);font-size:.78rem}
 .badge{display:inline-flex;padding:.15rem .55rem;border-radius:.45rem;font-size:.72rem;font-weight:700}
@@ -98,13 +125,41 @@ td .meta{color:var(--muted);font-size:.78rem}
 .form-row .hint{font-size:.76rem;color:var(--muted);margin-top:.35rem}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
 textarea{min-height:130px;resize:vertical;line-height:1.7}
+/* 正文编辑器工具栏 */
+.editor{border:1px solid var(--border);border-radius:.65rem;overflow:hidden;background:var(--input)}
+.editor-toolbar{display:flex;flex-wrap:wrap;gap:.25rem;align-items:center;padding:.45rem .55rem;border-bottom:1px solid var(--border);background:var(--bg)}
+.editor-toolbar button{min-width:2rem;height:2rem;padding:0 .45rem;border:none;border-radius:.4rem;background:transparent;color:var(--text2);font-size:.9rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .15s,color .15s}
+.editor-toolbar button:hover{background:var(--primary-soft);color:var(--primary)}
+.editor-toolbar .sep{width:1px;height:1.2rem;background:var(--border);margin:0 .25rem}
+.editor-area{display:block;width:100%;border:none !important;border-radius:0 !important;background:var(--input) !important;min-height:300px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.86rem}
+.editor-area:focus{box-shadow:none !important}
+.editor-status{padding:.4rem .7rem;border-top:1px solid var(--border);background:var(--bg);font-size:.74rem;color:var(--muted)}
+.ed-preview{margin-top:.6rem;padding:.7rem;border:1px dashed var(--border);border-radius:.65rem;font-size:.8rem;color:var(--text2)}
+.ed-preview img{max-width:220px;max-height:140px;display:block;margin-top:.5rem;border-radius:.4rem;border:1px solid var(--border)}
 .form-actions{display:flex;gap:.7rem;padding-top:.5rem}
 .inline-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem}
 .inline-tags .chip{padding:.25rem .6rem;border-radius:.45rem;background:var(--primary-soft);color:var(--primary);font-size:.78rem;font-weight:600}
+
+/* 数据备份与恢复 */
+.backup-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+.panel-body{padding:1.3rem}
+.backup-pill{padding:.2rem .6rem;border-radius:2rem;font-size:.72rem;font-weight:700;background:var(--primary-soft);color:var(--primary);white-space:nowrap}
+.backup-pill.danger{background:var(--danger-soft);color:var(--danger)}
+.backup-desc{color:var(--text2);font-size:.85rem;line-height:1.7;margin-bottom:1rem}
+.backup-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:1.2rem}
+.backup-stat{background:var(--input);border-radius:.6rem;padding:.7rem .8rem;text-align:center}
+.backup-stat b{display:block;font-size:1.2rem;font-weight:800;line-height:1.2}
+.backup-stat span{display:block;color:var(--muted);font-size:.74rem;margin-top:.15rem}
+.backup-warn{margin-top:.9rem;padding:.7rem .85rem;border-radius:.6rem;background:var(--input);color:var(--muted);font-size:.78rem;line-height:1.7}
+.backup-warn b{color:var(--danger)}
+.backup-warn code{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--bg);padding:.1rem .3rem;border-radius:.3rem}
+.backup-file{display:inline-flex;align-items:center;gap:.45rem;font-weight:600;font-size:.84rem}
+.backup-file svg{width:1rem;height:1rem;color:var(--primary)}
 
 @media(max-width:900px){
   .side{transform:translateX(-100%)}.side.open{transform:translateX(0)}
   .main-area{margin-left:0}.menubtn{display:grid}
   .content{padding:1rem}.form-grid{grid-template-columns:1fr}
   .tools .input{width:10rem}
+  .backup-grid{grid-template-columns:1fr}
 }

@@ -308,7 +308,17 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   display: grid; place-items: center; color: rgba(255,255,255,.9);
 }
 .post-cover svg { width: 3.5rem; height: 3.5rem; opacity: .8; }
-.post-cover .cover-text { position: absolute; bottom: .8rem; left: 1rem; font-size: .75rem; font-weight: 700; letter-spacing: .1em; opacity: .85; }
+.post-cover .cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.post-cover .cover-text {
+  position: absolute; bottom: .8rem; left: 1rem; font-size: .75rem; font-weight: 700;
+  letter-spacing: .1em; opacity: .95; color: #fff; z-index: 1;
+  padding: .2rem .55rem; border-radius: .35rem; background: rgba(0,0,0,.35);
+}
+.post-cover:has(.cover-img)::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.35), transparent 45%);
+  pointer-events: none;
+}
 
 @media (min-width: 720px) {
   .post-card { flex-direction: row; }

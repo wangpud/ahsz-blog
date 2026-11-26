@@ -4,7 +4,9 @@
  * 路由： / 首页 · /post/{id} · /cate/{id} · /tags · /tag/{id} · /archives · /search
  */
 require_once __DIR__ . '/inc/config.php';
+if (!db_is_installed()) { require __DIR__ . '/inc/need-install.php'; exit; }
 db_init();
+require_once __DIR__ . '/inc/cache.php';
 
 // 解析路由（兼容 router.php：从 REQUEST_URI 提取路径）
 $uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
@@ -17,6 +19,18 @@ $parts = $path !== '' ? explode('/', $path) : [];
 $route = $parts[0] ?? 'home';
 $arg = isset($parts[1]) ? (int)$parts[1] : 0;
 $page = max(1, (int)($_GET['p'] ?? 1));
+
+// 纯展示页走文件缓存：文章详情因阅读量+1不缓存，搜索页参数离散不缓存
+$cacheable = in_array($route, ['home', 'tags', 'archives'], true);
+// 覆盖 session 默认的 no-store，允许浏览器短暂缓存前台页面
+header('Cache-Control: public, max-age=60');
+if ($cacheable && ($cachedHtml = page_cache_get()) !== null) {
+    header('X-Page-Cache: HIT');
+    echo $cachedHtml;
+    exit;
+}
+if ($cacheable) header('X-Page-Cache: MISS');
+
 $perPage = max(1, (int)opt('per_page', '6'));
 
 $active = 'home';
@@ -33,6 +47,7 @@ switch ($route) {
     $total = (int)$db->query("SELECT COUNT(*) FROM posts WHERE status=1")->fetchColumn();
     [$pager, $offset] = paginate($total, $page, $perPage, link_to());
     $posts = $db->query("SELECT * FROM posts WHERE status=1 ORDER BY is_top DESC, created_at DESC LIMIT {$offset},{$perPage}")->fetchAll();
+    preload_post_meta($posts);
     ?>
     <div class="section-head"><h1>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
@@ -86,6 +101,7 @@ switch ($route) {
     $total = (int)$db->query("SELECT COUNT(*) FROM post_tags pt JOIN posts p ON p.id=pt.post_id WHERE pt.tag_id={$arg} AND p.status=1")->fetchColumn();
     [$pager, $offset] = paginate($total, $page, $perPage, link_to('tag/' . $arg));
     $posts = $db->query("SELECT p.* FROM posts p JOIN post_tags pt ON pt.post_id=p.id WHERE pt.tag_id={$arg} AND p.status=1 ORDER BY p.created_at DESC LIMIT {$offset},{$perPage}")->fetchAll();
+    preload_post_meta($posts);
     ?>
     <div class="section-head"><h1>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.6 13.4 12 22l-9-9V4h9z"/></svg>
@@ -138,6 +154,7 @@ switch ($route) {
       $st = $db->prepare("SELECT * FROM posts WHERE status=1 AND (title LIKE ? OR summary LIKE ? OR content LIKE ?) ORDER BY created_at DESC");
       $st->execute([$like, $like, $like]);
       $results = $st->fetchAll();
+      preload_post_meta($results);
       ?>
       <div class="section-head" style="padding:.6rem .4rem 0;"><span class="count">找到 <?= count($results) ?> 条与“<?= e($q) ?>”相关的结果</span></div>
       <?php foreach ($results as $post): include __DIR__ . '/views/post-card.php'; endforeach; ?>
@@ -158,9 +175,11 @@ switch ($route) {
     $cat = get_category((int)$post['category_id']);
     $tags = post_tags((int)$post['id']);
     $pageTitle = $post['title'];
-    // 上一篇 / 下一篇
-    $prev = $db->query("SELECT id,title FROM posts WHERE status=1 AND created_at < " . (int)$post['created_at'] . " ORDER BY created_at DESC LIMIT 1")->fetch();
-    $next = $db->query("SELECT id,title FROM posts WHERE status=1 AND created_at > " . (int)$post['created_at'] . " ORDER BY created_at ASC LIMIT 1")->fetch();
+    // 上一篇 / 下一篇（用 created_at + id 组合，避免同一秒发布时查不到相邻文章）
+    $ct = (int)$post['created_at'];
+    $pid = (int)$post['id'];
+    $prev = $db->query("SELECT id,title FROM posts WHERE status=1 AND (created_at < {$ct} OR (created_at={$ct} AND id < {$pid})) ORDER BY created_at DESC, id DESC LIMIT 1")->fetch();
+    $next = $db->query("SELECT id,title FROM posts WHERE status=1 AND (created_at > {$ct} OR (created_at={$ct} AND id > {$pid})) ORDER BY created_at ASC, id ASC LIMIT 1")->fetch();
     ?>
     <article class="card post-detail animate-in">
       <div class="post-meta">
@@ -197,7 +216,8 @@ switch ($route) {
 
 $content = ob_get_clean();
 
-// 输出完整页面
+// 输出完整页面（整体捕获后写入缓存，命中时无需查库）
+ob_start();
 include __DIR__ . '/views/header.php';
 echo '<div class="layout">';
 include __DIR__ . '/views/sidebar.php';
@@ -205,3 +225,6 @@ echo '<main class="main">';
 echo $content;
 echo '</main></div>';
 include __DIR__ . '/views/footer.php';
+$html = ob_get_clean();
+if ($cacheable) page_cache_set($html);
+echo $html;

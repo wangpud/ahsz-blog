@@ -1,4 +1,5 @@
 <?php
+if (!defined('APP_NAME')) { http_response_code(403); exit; }
 /**
  * 前台公共头部：banner + 浮动导航 + 设置面板
  * 变量：$active (nav-active), $pageTitle
