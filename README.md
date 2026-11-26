@@ -67,7 +67,6 @@
 ├── admin/             # 后台入口与视图
 ├── assets/            # CSS / JS
 ├── data/
-│   ├── blog.db        # 历史示例数据备份（安装向导不再导入）
 │   ├── db.config.php  # 安装生成，含数据库账号，已 gitignore
 │   ├── install.lock   # 安装生成，已 gitignore
 │   ├── backups/       # 后台生成的 SQL 备份（已 gitignore）

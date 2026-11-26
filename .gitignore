@@ -2,7 +2,8 @@
 data/db.config.php
 data/install.lock
 
-# SQLite 示例数据源（仅用于安装时可选导入，保留在仓库）
+# 遗留 SQLite 数据（含管理员哈希，已不再使用，禁止提交）
+data/*.db
 data/*.db-wal
 data/*.db-shm
 data/*.db-journal
